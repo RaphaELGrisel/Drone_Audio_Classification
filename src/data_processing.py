@@ -28,11 +28,12 @@ class DataProcessing():
                 for file_name in os.listdir(class_path):
                     while ct <n:
                         audio_path = os.path.join(class_path,file_name)
-                        sample_rate, audio = wavfile(audio_path)
+                        sample_rate, audio = wavfile.read(audio_path)
                         plt.subplot(1,n,ct+1)
                         plt.plot(audio)
                         plt.title(class_name)
                         plt.grid(True)
+                    ct+=1
                 plt.show()
 
 
