@@ -19,4 +19,5 @@ file = "/home/raphalinux/PycharmProjects/pythonProject/projet_sys/data/Binary_Dr
 dataset_binary = DataProcessing(file)
 dataset_binary.plot_waveform(4)
 dataset_binary.plot_waveform(2,"unknown")
-dataset_binary.plot_spectogram(1)
+dataset_binary.plot_spectrogram(1)
+dataset_binary.plot_spectrogram(1,"unknown")
