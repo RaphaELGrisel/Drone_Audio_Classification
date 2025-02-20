@@ -18,6 +18,8 @@ print(example_spect_labels)
 print(example_spectrograms)
 print(np.shape(example_spect_labels))
 print(np.shape(example_spectrograms))
+print(example_spectrograms.shape[1:])
+print(spectro_dataset.class_names)
 
 print("#-----------------------------#")
 
