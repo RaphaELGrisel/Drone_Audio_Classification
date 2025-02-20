@@ -114,6 +114,20 @@ class DataProcessing():
         plt.tight_layout()
         plt.show()
 
+    @staticmethod
+    def squeeze(audio, labels):
+        #single channel audio
+        audio = tf.squeeze(audio, axis=1)
+        return audio, labels
+    
+    @staticmethod
+    def get_spectrogram(waveform):
+        spectrogram = tf.signal.stft(
+            waveform, frame_length=255, frame_step=128
+        )
+        spectrogram = tf.abs(spectrogram)
+        spectrogram = spectrogram[..., tf.newaxis]
+        return spectrogram
 
     def get_spectrogram_dataset(self):
         #val_split at 0 
@@ -122,8 +136,17 @@ class DataProcessing():
             batch_size=64,
             validation_split=0.0,
             seed=0,
-            ouput_sequence_lenght=16000
+            output_sequence_length=16000
         )
-        label_names = np.aray(audio_dataset.class_names)
-        print(audio_dataset.shape)
-        print(label_names)
+        label_names = np.array(audio_dataset.class_names)
+        print("label names:",label_names)
+
+        audio_dataset = audio_dataset.map(self.squeeze, tf.data.AUTOTUNE)
+        spectro_dataset = audio_dataset.map(
+            map_func=lambda audio, label: (self.get_spectrogram(audio),label),
+            num_parallel_calls=tf.data.AUTOTUNE
+        )
+        return spectro_dataset
+
+
+
