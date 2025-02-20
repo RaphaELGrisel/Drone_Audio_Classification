@@ -116,8 +116,9 @@ class DataProcessing():
 
     @staticmethod
     def squeeze(audio, labels):
-        #single channel audio
-        audio = tf.squeeze(audio, axis=1)
+        shape = tf.shape(audio)
+        if shape[-1] == 1:  # If last dimension is 1, remove it
+            audio = tf.squeeze(audio, axis=-1)
         return audio, labels
     
     @staticmethod
