@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np 
 
 from data_processing import DataProcessing
+from model import Model
 
 file = "/home/raphalinux/PycharmProjects/pythonProject/projet_sys/data/Binary_Drone_Audio"
 dataset_binary = DataProcessing(file)
@@ -17,3 +18,9 @@ print(example_spect_labels)
 print(example_spectrograms)
 print(np.shape(example_spect_labels))
 print(np.shape(example_spectrograms))
+
+print("#-----------------------------#")
+
+model1 = Model(spectro_dataset)
+cnn = model1.CNN((124,129,1),2)
+cnn.summary()
