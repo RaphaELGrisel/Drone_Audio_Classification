@@ -147,7 +147,7 @@ class DataProcessing():
             map_func=lambda audio, label: (self.get_spectrogram(audio),label),
             num_parallel_calls=tf.data.AUTOTUNE
         )
-        return spectro_dataset
+        return spectro_dataset , label_names
 
 
 
