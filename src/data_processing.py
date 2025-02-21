@@ -142,12 +142,41 @@ class DataProcessing():
         label_names = np.array(audio_dataset.class_names)
         print("label names:",label_names)
 
-        audio_dataset = audio_dataset.map(self.squeeze, tf.data.AUTOTUNE)
-        spectro_dataset = audio_dataset.map(
-            map_func=lambda audio, label: (self.get_spectrogram(audio),label),
-            num_parallel_calls=tf.data.AUTOTUNE
-        )
-        return spectro_dataset , label_names
+        filtered_audio, filtered_labels = select_dataset_part(audio_dataset,"unknown")
+
+        spectro_labels = np.array(filtered_labels)
+        spectro_audio = np.zeros_like(filtered_audio)
+        for i in range(len(filtered_audio)):
+            spectro_audio[i] = get_spectrogram(filtered_audio[i])
+        
+        return spectro_audio , spectro_labels
 
 
+    @staticmethod
+    def select_dataset_part(dataset, class_name):
+        filtered_audio = []
+        filtered_labels = []
 
+        # Liste des indices de classes disponibles
+        class_index = dataset.class_names.index(class_name)  # obtenir l'index de la classe "class_name"
+
+        random_indices = np.random.choice(10300, 1000, replace=False)
+
+        idx_set = set(random_indices)  # convertir en set pour rechercher plus rapidement
+
+        # Itération sur les batches du dataset
+        for batch_idx, (audio, label) in enumerate(dataset):
+            for i in range(len(audio)):  # On itère sur chaque élément du batch
+                # Vérifier si l'étiquette de l'élément est de la classe voulue
+                if label[i] == class_index:
+                    global_index = batch_idx * 64 + i  # Indice global de l'élément
+                    # Si l'élément est dans les indices aléatoires, on l'ajoute
+                    if global_index in idx_set:
+                        filtered_audio.append(audio[i])
+                        filtered_labels.append(label[i])
+                else:
+                    # Ajouter tous les éléments de l'autre classe
+                    filtered_audio.append(audio[i])
+                    filtered_labels.append(label[i])
+
+        return filtered_audio, filtered_labels
