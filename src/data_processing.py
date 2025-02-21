@@ -172,12 +172,12 @@ class DataProcessing():
         label_names = np.array(audio_dataset.class_names)
         print("label names:",label_names)
 
-        filtered_audio, filtered_labels = self.select_dataset_part(audio_dataset,"unknown")
+        filtered_audio, filtered_labels = DataProcessing.select_dataset_part(audio_dataset,"unknown")
 
         spectro_labels = np.array(filtered_labels)
         spectro_audio = np.zeros_like(filtered_audio)
         for i in range(len(filtered_audio)):
-            spectro_audio[i] = self.get_spectrogram(filtered_audio[i])
+            spectro_audio[i] = DataProcessing.get_spectrogram(filtered_audio[i])
         
         return spectro_audio , spectro_labels
 
