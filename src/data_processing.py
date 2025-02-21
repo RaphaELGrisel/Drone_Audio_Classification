@@ -130,27 +130,6 @@ class DataProcessing():
         spectrogram = spectrogram[..., tf.newaxis]
         return spectrogram
 
-    def get_spectrogram_dataset(self):
-        #val_split at 0 
-        audio_dataset = tf.keras.utils.audio_dataset_from_directory(
-            directory = self.dataset_dir,
-            batch_size=64,
-            validation_split=0.0,
-            seed=0,
-            output_sequence_length=16000
-        )
-        label_names = np.array(audio_dataset.class_names)
-        print("label names:",label_names)
-
-        filtered_audio, filtered_labels = select_dataset_part(audio_dataset,"unknown")
-
-        spectro_labels = np.array(filtered_labels)
-        spectro_audio = np.zeros_like(filtered_audio)
-        for i in range(len(filtered_audio)):
-            spectro_audio[i] = get_spectrogram(filtered_audio[i])
-        
-        return spectro_audio , spectro_labels
-
 
     @staticmethod
     def select_dataset_part(dataset, class_name):
@@ -180,3 +159,27 @@ class DataProcessing():
                     filtered_labels.append(label[i])
 
         return filtered_audio, filtered_labels
+    
+    def get_spectrogram_dataset(self):
+        #val_split at 0 
+        audio_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory = self.dataset_dir,
+            batch_size=64,
+            validation_split=0.0,
+            seed=0,
+            output_sequence_length=16000
+        )
+        label_names = np.array(audio_dataset.class_names)
+        print("label names:",label_names)
+
+        filtered_audio, filtered_labels = self.select_dataset_part(audio_dataset,"unknown")
+
+        spectro_labels = np.array(filtered_labels)
+        spectro_audio = np.zeros_like(filtered_audio)
+        for i in range(len(filtered_audio)):
+            spectro_audio[i] = self.get_spectrogram(filtered_audio[i])
+        
+        return spectro_audio , spectro_labels
+
+
+    
