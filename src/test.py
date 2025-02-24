@@ -14,8 +14,8 @@ path_class = os.path.join(file,"unknown")
 files_after = [f for f in os.listdir(path_class)]
 print(f"Size file after {len(files_after)}")
 
-spectro_dataset = dataset_binary.get_spectrogram_dataset()
-print(spectro_dataset.type)
+train, test, val = dataset_binary.get_spectrogram_dataset()
+
 
 """
 

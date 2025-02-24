@@ -33,7 +33,7 @@ class Train():
             train_ds,
             validation_data=val_ds,
             epochs=self.n_epochs,
-            callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=5)
+            #callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=5)
         )
         
         
@@ -48,7 +48,7 @@ class Train():
         plt.subplot(1,2,1)
         plt.plot(history.epoch, metrics['loss'], metrics['val_loss'])
         plt.legend(['loss', 'val_loss'])
-        plt.ylim([0, max(plt.ylim())])
+        plt.ylim([0, 5])
         plt.xlabel('Epoch')
         plt.ylabel('Loss [CrossEntropy]')
 

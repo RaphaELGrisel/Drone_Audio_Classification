@@ -10,9 +10,8 @@ class Model():
     def __init__(self,training_dataset):
         self.train_spectrogram = training_dataset
 
-    def CNN(self,label_names,input_dim=(124,129,1)):
+    def CNN(self,n_labels = 2 ,input_dim=(124,129,1)):
         input_shape = input_dim
-        n_labels = len(label_names)
         norm_layer = layers.Normalization()
         spectrogram_ds = self.train_spectrogram.map(lambda spec, label: spec)
         norm_layer.adapt(spectrogram_ds)
@@ -20,13 +19,15 @@ class Model():
             layers.Input(shape=input_shape),
             layers.Resizing(32,32),
             norm_layer,
-            layers.Conv2D(32,2,activation="relu"),
-            layers.Conv2D(64,2,activation="relu"),
+            layers.Conv2D(32,3,activation="relu"),
+            layers.Conv2D(64,3,activation="relu"),
             layers.MaxPooling2D(),
             layers.Dropout(0.25),
             layers.Flatten(),
-            layers.Dense(125,activation="relu"),
+            layers.Dense(128,activation="relu"),
             layers.Dropout(0.5),
             layers.Dense(n_labels)
         ])
+
+        model.summary()
         return model

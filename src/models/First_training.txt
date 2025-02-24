@@ -14,3 +14,14 @@ LR schedule Cosine decay
 5 epochs early stopping
 No overfitting (less)
 
+100 epochs without early stopping
+LR ExpoDecay
+No overfitting (just the ylim makes it look very far)
+---------------Evaluation---------------
+model accuracy on test dataset : 0.98
+precision : 0.99
+Recal : 0.99
+F1-score: 0.99
+
+Matrice de confusion montre que seul moment ou le modèle fait des erreurs c'est quand il prédit la présence d'un drone
+alors que c'est que du bruit
