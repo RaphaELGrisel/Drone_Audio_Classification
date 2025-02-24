@@ -36,7 +36,8 @@ class Evaluate():
         plt.figure(figsize=(10,8))
         sns.heatmap(confusion_matrix,
                     xticklabels=self.class_names,
-                    yticklabels=self.class_names)
+                    yticklabels=self.class_names,
+                    annot=True, fmt='g')
         plt.xlabel("Prediction")
         plt.ylabel("Label")
         plt.show()
