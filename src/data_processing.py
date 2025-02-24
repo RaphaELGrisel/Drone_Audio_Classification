@@ -181,6 +181,7 @@ class DataProcessing():
 
     
     def get_spectrogram_dataset(self):
+        print("GO")
         train_dataset = tf.keras.utils.audio_dataset_from_directory(
             directory=self.dataset_dir,
             batch_size=64,
