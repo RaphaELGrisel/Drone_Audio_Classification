@@ -30,6 +30,7 @@ class DataProcessing():
                     while ct <n:
                         audio_path = os.path.join(class_path,file_name)
                         sample_rate, audio = wavfile.read(audio_path)
+                        print("SHAPE:",audio.shape)
                         plt.subplot(n,1,ct+1)
                         plt.plot(audio)
                         plt.title(class_name)
@@ -117,9 +118,7 @@ class DataProcessing():
 
     @staticmethod
     def squeeze(audio, labels):
-        shape = tf.shape(audio)
-        if shape[-1] == 1:  # If last dimension is 1, remove it
-            audio = tf.squeeze(audio, axis=-1)
+        audio = tf.squeeze(audio, axis=-1)
         return audio, labels
     
     @staticmethod
@@ -163,16 +162,21 @@ class DataProcessing():
         """
     
     def select_dataset_part(self,class_name,number=9000):
-        path_class = os.path.join(self.dataset_dir,class_name)
+        answer = input("ARE YOU SURE YOU WANT TO DELETE FILES ?")
+        if answer:
+            path_class = os.path.join(self.dataset_dir,class_name)
 
-        files = [f for f in os.listdir(path_class)]
-        print(f"Size file before {len(files)}")
+            files = [f for f in os.listdir(path_class)]
+            print(f"Size file before {len(files)}")
 
-        file_to_remove = random.sample(files,number)
-        for file_name in file_to_remove:
-            path_to_remove = os.path.join(path_class,file_name)
-            os.remove(path_to_remove)
-        print(f"Size file after {len(files)}")
+            file_to_remove = random.sample(files,number)
+            for file_name in file_to_remove:
+                path_to_remove = os.path.join(path_class,file_name)
+                os.remove(path_to_remove)
+            files_after = [f for f in os.listdir(path_class)]
+            print(f"Size file after {len(files_after)}")
+        else:
+            print("No FILES REMOVED")
 
 
     
@@ -185,18 +189,16 @@ class DataProcessing():
             seed=0,
             output_sequence_length=16000
         )
+        print(audio_dataset.element_spec)
         label_names = np.array(audio_dataset.class_names)
         print("label names:",label_names)
+        audio_dataset = audio_dataset.map(DataProcessing.squeeze, tf.data.AUTOTUNE)
+        
 
-        filtered_audio, filtered_labels = DataProcessing.select_dataset_part(audio_dataset,'unknown')
-        print(len(filtered_audio))
-
-        spectro_labels = np.array(filtered_labels)
-        spectro_audio = []
-        for i in range(len(filtered_audio)):
-            spectro_audio.append(DataProcessing.get_spectrogram(filtered_audio[i]))
-        spectro_audio = np.array(spectro_audio)
-        return spectro_audio , spectro_labels
+        spectrogram_dataset = audio_dataset.map(map_func=lambda audio,label : (DataProcessing.get_spectrogram(audio), label),
+                                                num_parallel_calls=tf.data.AUTOTUNE)
+        print(spectrogram_dataset.element_spec)
+        return spectrogram_dataset
 
 
     
