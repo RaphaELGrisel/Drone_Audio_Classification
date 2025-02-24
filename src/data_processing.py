@@ -165,7 +165,7 @@ class DataProcessing():
     def select_dataset_part(self,class_name,number=9000):
         path_class = os.path.join(self.dataset_dir,class_name)
 
-        files = [f for f in os.lisdir(path_class)]
+        files = [f for f in os.listdir(path_class)]
         print(f"Size file before {len(files)}")
 
         file_to_remove = random.sample(files,number)
