@@ -6,10 +6,10 @@ from model import Model
 
 
 class Train():
-    def __init__(self,n_epochs, train, test, model):
+    def __init__(self,n_epochs, train, val, model):
         self.n_epochs = n_epochs
         self.train_ds = train
-        self.test_ds = test
+        self.tval_ds = val
         self.model = model
     
 
@@ -17,7 +17,6 @@ class Train():
 
         train_ds = self.train_ds.cache().shuffle(1000).prefetch(tf.data.AUTOTUNE)
         val_ds = self.val_ds.cache().prefetch(tf.data.AUTOTUNE)
-        test_ds = self.test_ds.cache().prefetch(tf.data.AUTOTUNE)
 
         self.model.compile(
             optimizer = tf.keras.optimizers.Adam(),
