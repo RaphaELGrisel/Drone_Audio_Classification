@@ -184,7 +184,7 @@ class DataProcessing():
         train_dataset = tf.keras.utils.audio_dataset_from_directory(
             directory=self.dataset_dir,
             batch_size=64,
-            validation_split=0.20,  # 20% des données iront en validation
+            validation_split=0.05,  # 20% des données iront en validation
             subset="training",  # Partie training
             seed=42,
             output_sequence_length=16000
@@ -193,7 +193,7 @@ class DataProcessing():
         val_dataset = tf.keras.utils.audio_dataset_from_directory(
             directory=self.dataset_dir,
             batch_size=64,
-            validation_split=0.30,  # 20% des données iront en validation
+            validation_split=0.05,  # 20% des données iront en validation
             subset="validation",  # Partie validation
             seed=42,
             output_sequence_length=16000
@@ -217,11 +217,11 @@ class DataProcessing():
         print(train_dataset.element_spec)
 
         # 🎯 On veut maintenant un dataset de test. Prenons 10% des données de train
-        test_size = int(0.75 * sum(1 for _ in val_dataset))  # 75% du validation set
+        test_size = int(0.30 * sum(1 for _ in train_dataset))  # 75% du validation set
 
         # On crée un dataset de test avec `take()` et on réduit train avec `skip()`
-        test_dataset = val_dataset.take(test_size)
-        val_dataset = val_dataset.skip(test_size)
+        test_dataset = train_dataset.take(test_size)
+        train_dataset = train_dataset.skip(test_size)
 
         return train_dataset, val_dataset, test_dataset
 
