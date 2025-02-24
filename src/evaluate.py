@@ -33,15 +33,34 @@ class Evaluate():
     
     def conf_matrix(self,y_true,y_pred):
         print("New confusion matrix")
+        print("New confusion matrix")
+
+        # Calcul de la matrice de confusion
         confu = confusion_matrix(y_true, y_pred)
-        plt.figure(figsize=(10,8))
-        sns.heatmap(confu,
-                    xticklabels=self.class_names,
-                    yticklabels=self.class_names,
-                    annot=True, fmt='g')
+
+        # Normalisation optionnelle pour obtenir des pourcentages
+        confu_norm = confu.astype("float") / confu.sum(axis=1)[:, np.newaxis]
+
+        # Création de la figure
+        plt.figure(figsize=(10, 8))
+        
+        # Heatmap avec normalisation
+        sns.heatmap(confu_norm, 
+                    xticklabels=self.class_names, 
+                    yticklabels=self.class_names, 
+                    annot=True, 
+                    fmt=".2f",  # Affichage en pourcentage
+                    cmap="Blues", 
+                    linewidths=0.5, 
+                    linecolor="gray",
+                    cbar=True)
+
+        # Labels et titre
         plt.xlabel("Prediction")
         plt.ylabel("Label")
+        plt.title(f"Matrice de confusion - Accuracy : {np.trace(confu) / np.sum(confu):.2%}")
+
+        # Affichage
         plt.show()
 
-
-    
+        
