@@ -33,9 +33,9 @@ class Evaluate():
     
     def conf_matrix(self,y_true,y_pred):
         print("New confusion matrix")
-        confusion_matrix = confusion_matrix(y_true, y_pred)
+        confu = confusion_matrix(y_true, y_pred)
         plt.figure(figsize=(10,8))
-        sns.heatmap(confusion_matrix,
+        sns.heatmap(confu,
                     xticklabels=self.class_names,
                     yticklabels=self.class_names,
                     annot=True, fmt='g')
