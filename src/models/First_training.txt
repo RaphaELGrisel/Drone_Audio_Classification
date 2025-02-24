@@ -25,3 +25,10 @@ F1-score: 0.99
 
 Matrice de confusion montre que seul moment ou le modèle fait des erreurs c'est quand il prédit la présence d'un drone
 alors que c'est que du bruit
+
+
+Same configuration but more testing images:
+accuracy : 0.984375
+Precision: 0.98
+Recal: 0.98 
+F1-score: 0.98
