@@ -1,0 +1,16 @@
+Simple CNN
+with dropout
+SparseCategoricalCrossentropy loss
+no scheduler
+earlystopping ( 2 epochs)
+
+
+training over 100 epochs :
+defalut LR value for ADM: 0.001
+Stopped after 8 epochs + overfitting 
+
+training over 100 epochs:
+LR schedule Cosine decay
+5 epochs early stopping
+No overfitting (less)
+
