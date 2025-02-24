@@ -6,11 +6,10 @@ from model import Model
 
 
 class Train():
-    def __init__(self,n_epochs, train, test, val, model):
+    def __init__(self,n_epochs, train, test, model):
         self.n_epochs = n_epochs
         self.train_ds = train
-        self.val_ds = test
-        self.test_ds = val
+        self.test_ds = test
         self.model = model
     
 
