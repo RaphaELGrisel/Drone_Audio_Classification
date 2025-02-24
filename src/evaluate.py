@@ -32,7 +32,8 @@ class Evaluate():
         return y_true, y_pred, precision, recall, f1
     
     def conf_matrix(self,y_true,y_pred):
-        confusion_matrix = tf.math.confusion_matrix(y_true, y_pred)
+        print("New confusion matrix")
+        confusion_matrix = confusion_matrix(y_true, y_pred)
         plt.figure(figsize=(10,8))
         sns.heatmap(confusion_matrix,
                     xticklabels=self.class_names,
