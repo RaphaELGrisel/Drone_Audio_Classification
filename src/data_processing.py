@@ -10,6 +10,7 @@ import tensorflow as tf
 
 from IPython import display
 from scipy.io import wavfile
+import random
 
 class DataProcessing():
     def __init__(self, dirpath):
@@ -124,13 +125,13 @@ class DataProcessing():
     @staticmethod
     def get_spectrogram(waveform):
         spectrogram = tf.signal.stft(
-            waveform, frame_length=255, frame_step=128
+            waveform, frame_length=256, frame_step=128
         )
         spectrogram = tf.abs(spectrogram)
         spectrogram = spectrogram[..., tf.newaxis]
         return spectrogram
 
-
+    """
     @staticmethod
     def select_dataset_part(dataset, class_name):
         filtered_audio = []
@@ -138,7 +139,7 @@ class DataProcessing():
 
         # Liste des indices de classes disponibles
         class_index = dataset.class_names.index(class_name)  # obtenir l'index de la classe "class_name"
-
+        print(class_index)
         random_indices = np.random.choice(10300, 1000, replace=False)
 
         idx_set = set(random_indices)  # convertir en set pour rechercher plus rapidement
@@ -159,6 +160,21 @@ class DataProcessing():
                     filtered_labels.append(label[i])
 
         return filtered_audio, filtered_labels
+        """
+    
+    def select_dataset_part(self,class_name,number=9000):
+        path_class = os.path.join(self.dataset_dir,class_name)
+
+        files = [f for f in os.lisdir(path_class)]
+        print(f"Size file before {len(files)}")
+
+        file_to_remove = random.sample(files,number)
+        for file_name in file_to_remove:
+            path_to_remove = os.path.join(path_class,file_name)
+            os.remove(path_to_remove)
+        print(f"Size file after {len(files)}")
+
+
     
     def get_spectrogram_dataset(self):
         #val_split at 0 
@@ -172,13 +188,14 @@ class DataProcessing():
         label_names = np.array(audio_dataset.class_names)
         print("label names:",label_names)
 
-        filtered_audio, filtered_labels = DataProcessing.select_dataset_part(audio_dataset,"unknown")
+        filtered_audio, filtered_labels = DataProcessing.select_dataset_part(audio_dataset,'unknown')
+        print(len(filtered_audio))
 
         spectro_labels = np.array(filtered_labels)
-        spectro_audio = np.zeros_like(filtered_audio)
+        spectro_audio = []
         for i in range(len(filtered_audio)):
-            spectro_audio[i] = DataProcessing.get_spectrogram(filtered_audio[i])
-        
+            spectro_audio.append(DataProcessing.get_spectrogram(filtered_audio[i]))
+        spectro_audio = np.array(spectro_audio)
         return spectro_audio , spectro_labels
 
 
