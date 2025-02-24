@@ -9,7 +9,7 @@ class Train():
     def __init__(self,n_epochs, train, val, model):
         self.n_epochs = n_epochs
         self.train_ds = train
-        self.tval_ds = val
+        self.val_ds = val
         self.model = model
     
 
