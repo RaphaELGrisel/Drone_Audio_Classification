@@ -18,8 +18,14 @@ class Train():
         train_ds = self.train_ds.cache().shuffle(1000).prefetch(tf.data.AUTOTUNE)
         val_ds = self.val_ds.cache().prefetch(tf.data.AUTOTUNE)
 
+        lr_scheduler = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=0.001,
+            decay_steps= self.n_epochs,
+            decay_rate=0.96,
+            staircase=False
+        )
         self.model.compile(
-            optimizer = tf.keras.optimizers.Adam(),
+            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_scheduler),
             loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy']
         )
@@ -27,7 +33,7 @@ class Train():
             train_ds,
             validation_data=val_ds,
             epochs=self.n_epochs,
-            callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=2)
+            callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=5)
         )
         
         
