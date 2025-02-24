@@ -181,24 +181,49 @@ class DataProcessing():
 
     
     def get_spectrogram_dataset(self):
-        #val_split at 0 
-        audio_dataset = tf.keras.utils.audio_dataset_from_directory(
-            directory = self.dataset_dir,
+        train_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
             batch_size=64,
-            validation_split=0.0,
-            seed=0,
+            validation_split=0.20,  # 20% des données iront en validation
+            subset="training",  # Partie training
+            seed=42,
             output_sequence_length=16000
         )
-        print(audio_dataset.element_spec)
-        label_names = np.array(audio_dataset.class_names)
-        print("label names:",label_names)
-        audio_dataset = audio_dataset.map(DataProcessing.squeeze, tf.data.AUTOTUNE)
-        
 
-        spectrogram_dataset = audio_dataset.map(map_func=lambda audio,label : (DataProcessing.get_spectrogram(audio), label),
-                                                num_parallel_calls=tf.data.AUTOTUNE)
-        print(spectrogram_dataset.element_spec)
-        return spectrogram_dataset
+        val_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.20,  # 20% des données iront en validation
+            subset="validation",  # Partie validation
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        print(train_dataset.element_spec)
+        label_names = np.array(train_dataset.class_names)
+        print("Label names:", label_names)
+
+        # ⚡️ Appliquer `squeeze()` pour enlever les dimensions inutiles
+        train_dataset = train_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
+        val_dataset = val_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
+
+        # ⚡️ Transformer en spectrogramme
+        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.get_spectrogram(audio), label),
+                                          num_parallel_calls=tf.data.AUTOTUNE)
+
+        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_spectrogram(audio), label),
+                                      num_parallel_calls=tf.data.AUTOTUNE)
+
+        print(train_dataset.element_spec)
+
+        # 🎯 On veut maintenant un dataset de test. Prenons 10% des données de train
+        test_size = int(0.1 * sum(1 for _ in train_dataset))  # 10% du train
+
+        # On crée un dataset de test avec `take()` et on réduit train avec `skip()`
+        test_dataset = train_dataset.take(test_size)
+        train_dataset = train_dataset.skip(test_size)
+
+        return train_dataset, val_dataset, test_dataset
 
 
     
