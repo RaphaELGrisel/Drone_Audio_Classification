@@ -12,6 +12,7 @@ class Evaluate():
         self.class_names=class_names
 
     def accuracy(self):
+        self.test_ds = self.test_ds.cache().prefetch(tf.data.AUTOTUNE)
         results = self.model.evaluate(self.test_ds, return_dict=True)
         print(f"Model accuracy on test dataset: {results['accuracy']}")
         y_pred = self.model.predict(self.test_ds)
