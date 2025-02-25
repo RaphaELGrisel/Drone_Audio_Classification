@@ -12,6 +12,9 @@ from IPython import display
 from scipy.io import wavfile
 import random
 
+import librosa
+import librosa.display
+
 class DataProcessing():
     def __init__(self, dirpath):
         self.dataset_dir = dirpath
@@ -129,6 +132,40 @@ class DataProcessing():
         spectrogram = tf.abs(spectrogram)
         spectrogram = spectrogram[..., tf.newaxis]
         return spectrogram
+    
+    @staticmethod
+    def get_mel_spectrogram(waveform):
+        mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=128,fmax=8000)
+
+        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+        return mel_spec_db
+    
+
+    def plot_mel_spectrogram(self,n,type="yes_drone"):
+        """
+        mel_spec plots for n audio recording
+        """
+        for class_name in os.listdir(self.dataset_dir):
+            if class_name==type:
+                class_path = os.path.join(self.dataset_dir,class_name)
+                ct = 0
+                plt.figure(figsize=(16,10))
+                for file_name in os.listdir(class_path):
+                    while ct <n:
+                        audio_path = os.path.join(class_path,file_name)
+                        sample_rate, audio = wavfile.read(audio_path)
+                        mel_spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate,n_mels=128,fmax=8000)
+                        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+                        librosa.display.specshow(mel_spec_db, sr=sample_rate,x_axis="time",y_axis='mel',cmap='viridis')
+                        plt.colorbar(label="dB")
+                        plt.title("Mel-Spectrogramme Log")
+                        plt.xlabel("Temps")
+                        plt.ylabel("Echelle MEL")
+                        plt.show()
+                        ct+=1
+                plt.show()
+    
+
 
     """
     @staticmethod
