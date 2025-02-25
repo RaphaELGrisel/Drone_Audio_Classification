@@ -15,7 +15,7 @@ class Train():
 
     def training_loop(self):
 
-        train_ds = self.train_ds.cache().shuffle(1000).prefetch(tf.data.AUTOTUNE)
+        train_ds = self.train_ds.cache().shuffle(2000).prefetch(tf.data.AUTOTUNE)
         val_ds = self.val_ds.cache().prefetch(tf.data.AUTOTUNE)
 
         lr_scheduler0 = tf.keras.optimizers.schedules.CosineDecay(
