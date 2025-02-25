@@ -32,3 +32,14 @@ accuracy : 0.984375
 Precision: 0.98
 Recal: 0.98 
 F1-score: 0.98
+
+
+
+Moyenne sur 10 entraînement de 50 epochs:
+-------Detection-----------
+acc = 0.9762
+f1-score = 0.98
+
+------------classif---------
+acc=0.9605
+F1-score = 0.97
