@@ -39,7 +39,7 @@ class Evaluate():
         confu = confusion_matrix(y_true, y_pred)
 
         # Normalisation optionnelle pour obtenir des pourcentages
-        confu_norm = confu.astype("float") / confu.sum(axis=1)[:, np.newaxis]
+        confu_norm = (confu.astype("float") / confu.sum(axis=1)[:, np.newaxis])*100
 
         # Création de la figure
         plt.figure(figsize=(10, 8))
