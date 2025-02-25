@@ -278,7 +278,7 @@ class DataProcessing():
         print("GO")
         train_dataset = tf.keras.utils.audio_dataset_from_directory(
             directory=self.dataset_dir,
-            batch_size=16,
+            batch_size=64,
             validation_split=0.05,  # 20% des données iront en validation
             subset="training",  # Partie training
             seed=42,
@@ -287,7 +287,7 @@ class DataProcessing():
 
         val_dataset = tf.keras.utils.audio_dataset_from_directory(
             directory=self.dataset_dir,
-            batch_size=16,
+            batch_size=64,
             validation_split=0.05,  # 20% des données iront en validation
             subset="validation",  # Partie validation
             seed=42,

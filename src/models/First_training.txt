@@ -43,3 +43,10 @@ f1-score = 0.98
 ------------classif---------
 acc=0.9605
 F1-score = 0.97
+
+
+
+
+
+Training MEL-model : 
+change scheduler
