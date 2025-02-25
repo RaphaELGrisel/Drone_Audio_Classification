@@ -135,11 +135,12 @@ class DataProcessing():
     
     @staticmethod
     def get_mel_spectrogram(waveform):
+        waveform = waveform.numpy() if isinstance(waveform, tf.Tensor) else waveform
         mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=129,hop_length=int((len(waveform)/124)+1),n_fft=1024)
 
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
         mel_spec_db = mel_spec_db[..., tf.newaxis]
-        return mel_spec_db
+        return mel_spec_db.astype(np.float32)
     
 
     def plot_mel_spectrogram(self,n,type="yes_drone"):
@@ -296,12 +297,13 @@ class DataProcessing():
         train_dataset = train_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
         val_dataset = val_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
 
-        # ⚡️ Transformer en spectrogramme
-        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram(audio), label),
-                                          num_parallel_calls=tf.data.AUTOTUNE)
+        def tf_get_mel_spectrogram(audio, label):
+            spectrogram = tf.numpy_function(DataProcessing.get_mel_spectrogram, [audio], tf.float32)
+            spectrogram.set_shape([129, 124, 1])  # Fixer la forme
+            return spectrogram, label
 
-        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram(audio), label),
-                                      num_parallel_calls=tf.data.AUTOTUNE)
+        train_dataset = train_dataset.map(tf_get_mel_spectrogram, num_parallel_calls=tf.data.AUTOTUNE)
+        val_dataset = val_dataset.map(tf_get_mel_spectrogram, num_parallel_calls=tf.data.AUTOTUNE)
 
         print(train_dataset.element_spec)
 
