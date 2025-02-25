@@ -135,9 +135,10 @@ class DataProcessing():
     
     @staticmethod
     def get_mel_spectrogram(waveform):
-        mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=128,fmax=8000)
+        mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=129,hop_length=int(len(waveform)/124),n_fft=1024)
 
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+        mel_spec_db = mel_spec_db[..., tf.newaxis]
         return mel_spec_db
     
 
@@ -154,8 +155,10 @@ class DataProcessing():
                     while ct <n:
                         audio_path = os.path.join(class_path,file_name)
                         sample_rate, audio = wavfile.read(audio_path)
-                        mel_spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate,n_mels=128,fmax=8000)
+                        mel_spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate,n_mels=129,hop_length=int(len(audio)/124),n_fft=1024)
+                        print(np.shape(mel_spec))
                         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+                        print(np.shape(mel_spec_db))
                         librosa.display.specshow(mel_spec_db, sr=sample_rate,x_axis="time",y_axis='mel',cmap='viridis')
                         plt.colorbar(label="dB")
                         plt.title("Mel-Spectrogramme Log")
