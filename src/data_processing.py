@@ -143,7 +143,7 @@ class DataProcessing():
         spectrogram = tf.abs(spectrogram)
         mel_spectro = tfio.audio.melscale(spectrogram, rate=16000, mels=129,fmin=0, fmax=8000)
         mel_spectro = tf.math.log(mel_spectro)
-        mel_spectro = (mel_spectro - tf.reduce_min(mel_spectro)) / (tf.reduce_max(mel_spectro) - tf.reduce_min(mel_spectro))
+        #mel_spectro = (mel_spectro - tf.reduce_min(mel_spectro)) / (tf.reduce_max(mel_spectro) - tf.reduce_min(mel_spectro))
         mel_spectro = mel_spectro[...,tf.newaxis]
         return mel_spectro
     
