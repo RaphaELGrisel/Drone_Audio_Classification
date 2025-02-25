@@ -30,7 +30,7 @@ class Train():
             staircase=True
         )   
         self.model.compile(
-            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_scheduler1),
+            optimizer = tf.keras.optimizers.Adam(learning_rate=0.001),
             loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy']
         )
