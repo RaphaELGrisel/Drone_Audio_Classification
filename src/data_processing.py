@@ -135,7 +135,7 @@ class DataProcessing():
     
     @staticmethod
     def get_mel_spectrogram(waveform):
-        mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=129,hop_length=(int(len(waveform)/124)+1),n_fft=1024)
+        mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=129,hop_length=int((len(waveform)/124)+1),n_fft=1024)
 
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
         mel_spec_db = mel_spec_db[..., tf.newaxis]
