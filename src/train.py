@@ -24,13 +24,13 @@ class Train():
             alpha=0.0
         )
         lr_scheduler1 = tf.keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate=0.01,
-            decay_steps= self.n_epochs,
+            initial_learning_rate=0.001,
+            decay_steps=100000,
             decay_rate=0.96,
-            staircase=False
-        )
+            staircase=True
+        )   
         self.model.compile(
-            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_scheduler0),
+            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_scheduler1),
             loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy']
         )
