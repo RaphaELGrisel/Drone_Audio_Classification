@@ -15,6 +15,8 @@ import random
 import librosa
 import librosa.display
 
+import tensorflow_io as tfio
+
 class DataProcessing():
     def __init__(self, dirpath):
         self.dataset_dir = dirpath
@@ -135,12 +137,14 @@ class DataProcessing():
     
     @staticmethod
     def get_mel_spectrogram(waveform):
-        waveform = waveform.numpy() if isinstance(waveform, tf.Tensor) else waveform
-        mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=129,hop_length=int((len(waveform)/124)+1),n_fft=1024)
-
-        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-        mel_spec_db = mel_spec_db[..., tf.newaxis]
-        return mel_spec_db.astype(np.float32)
+        spectrogram = tf.signal.stft(
+            waveform, frame_length=256, frame_step=128
+        )
+        spectrogram = tf.abs(spectrogram)
+        mel_spectro = tfio.audio.melscale(spectrogram, rate=1600, mels=129,fmin=0, fmax=130)
+        mel_spectro = tf.math.log(mel_spectro)
+        mel_spectro = mel_spectro[...,tf.newaxis]
+        return mel_spectro
     
 
     def plot_mel_spectrogram(self,n,type="yes_drone"):
@@ -269,11 +273,11 @@ class DataProcessing():
         return train_dataset, val_dataset, test_dataset
     
 
-    def get_mel_spectrogram_dataset(self):
+    def get_spectrogram_dataset(self):
         print("GO")
         train_dataset = tf.keras.utils.audio_dataset_from_directory(
             directory=self.dataset_dir,
-            batch_size=16,
+            batch_size=64,
             validation_split=0.05,  # 20% des données iront en validation
             subset="training",  # Partie training
             seed=42,
@@ -282,7 +286,7 @@ class DataProcessing():
 
         val_dataset = tf.keras.utils.audio_dataset_from_directory(
             directory=self.dataset_dir,
-            batch_size=16,
+            batch_size=64,
             validation_split=0.05,  # 20% des données iront en validation
             subset="validation",  # Partie validation
             seed=42,
@@ -297,13 +301,12 @@ class DataProcessing():
         train_dataset = train_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
         val_dataset = val_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
 
-        def tf_get_mel_spectrogram(audio, label):
-            spectrogram = tf.numpy_function(DataProcessing.get_mel_spectrogram, [audio], tf.float32)
-            spectrogram.set_shape([129, 124, 1])  # Fixer la forme
-            return spectrogram, label
+        # ⚡️ Transformer en spectrogramme
+        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram(audio), label),
+                                          num_parallel_calls=tf.data.AUTOTUNE)
 
-        train_dataset = train_dataset.map(tf_get_mel_spectrogram, num_parallel_calls=tf.data.AUTOTUNE)
-        val_dataset = val_dataset.map(tf_get_mel_spectrogram, num_parallel_calls=tf.data.AUTOTUNE)
+        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram(audio), label),
+                                      num_parallel_calls=tf.data.AUTOTUNE)
 
         print(train_dataset.element_spec)
 
@@ -315,6 +318,3 @@ class DataProcessing():
         train_dataset = train_dataset.skip(test_size)
 
         return train_dataset, val_dataset, test_dataset
-
-
-    
