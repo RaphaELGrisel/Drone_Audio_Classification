@@ -22,12 +22,10 @@ class Model():
             layers.Conv2D(32,3,activation="relu"),
             layers.Conv2D(64,3,activation="relu"),
             layers.MaxPooling2D(),
-            #layers.Dropout(0.25),
+            layers.Dropout(0.25),
             layers.Flatten(),
             layers.Dense(128,activation="relu"),
-            layers.Dense(64,activation="relu"),
-            layers.Dense(32,activation="relu"),
-            #layers.Dropout(0.5),
+            layers.Dropout(0.5),
             layers.Dense(n_labels)
         ])
 
