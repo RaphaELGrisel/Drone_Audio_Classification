@@ -141,7 +141,7 @@ class DataProcessing():
             waveform, frame_length=256, frame_step=128
         )
         spectrogram = tf.abs(spectrogram)
-        mel_spectro = tfio.audio.melscale(spectrogram, rate=1600, mels=129,fmin=0, fmax=130)
+        mel_spectro = tfio.audio.melscale(spectrogram, rate=16000, mels=129,fmin=0, fmax=8000)
         mel_spectro = tf.math.log(mel_spectro)
         mel_spectro = mel_spectro[...,tf.newaxis]
         return mel_spectro
