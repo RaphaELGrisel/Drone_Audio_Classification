@@ -273,7 +273,7 @@ class DataProcessing():
         return train_dataset, val_dataset, test_dataset
     
 
-    def get_spectrogram_dataset(self):
+    def get_mel_spectrogram_dataset(self):
         print("GO")
         train_dataset = tf.keras.utils.audio_dataset_from_directory(
             directory=self.dataset_dir,
