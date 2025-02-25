@@ -135,7 +135,7 @@ class DataProcessing():
     
     @staticmethod
     def get_mel_spectrogram(waveform):
-        mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=129,hop_length=int(len(waveform)/124),n_fft=1024)
+        mel_spec = librosa.feature.melspectrogram(y=waveform,sr=16000,n_mels=129,hop_length=(int(len(waveform)/124)+1),n_fft=1024)
 
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
         mel_spec_db = mel_spec_db[..., tf.newaxis]
@@ -155,7 +155,8 @@ class DataProcessing():
                     while ct <n:
                         audio_path = os.path.join(class_path,file_name)
                         sample_rate, audio = wavfile.read(audio_path)
-                        mel_spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate,n_mels=129,hop_length=int(len(audio)/124),n_fft=1024)
+                        audio = audio.astype(np.float32)
+                        mel_spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate,n_mels=129,hop_length=int((len(audio)/124)+1),n_fft=1024)
                         print(np.shape(mel_spec))
                         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
                         print(np.shape(mel_spec_db))
@@ -253,6 +254,53 @@ class DataProcessing():
                                           num_parallel_calls=tf.data.AUTOTUNE)
 
         val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_spectrogram(audio), label),
+                                      num_parallel_calls=tf.data.AUTOTUNE)
+
+        print(train_dataset.element_spec)
+
+        # 🎯 On veut maintenant un dataset de test. Prenons 10% des données de train
+        test_size = int(0.30 * sum(1 for _ in train_dataset))  # 75% du validation set
+
+        # On crée un dataset de test avec `take()` et on réduit train avec `skip()`
+        test_dataset = train_dataset.take(test_size)
+        train_dataset = train_dataset.skip(test_size)
+
+        return train_dataset, val_dataset, test_dataset
+    
+
+    def get_mel_spectrogram_dataset(self):
+        print("GO")
+        train_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.05,  # 20% des données iront en validation
+            subset="training",  # Partie training
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        val_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.05,  # 20% des données iront en validation
+            subset="validation",  # Partie validation
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        print(train_dataset.element_spec)
+        label_names = np.array(train_dataset.class_names)
+        print("Label names:", label_names)
+
+        # ⚡️ Appliquer `squeeze()` pour enlever les dimensions inutiles
+        train_dataset = train_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
+        val_dataset = val_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
+
+        # ⚡️ Transformer en spectrogramme
+        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram(audio), label),
+                                          num_parallel_calls=tf.data.AUTOTUNE)
+
+        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram(audio), label),
                                       num_parallel_calls=tf.data.AUTOTUNE)
 
         print(train_dataset.element_spec)
