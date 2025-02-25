@@ -18,14 +18,19 @@ class Train():
         train_ds = self.train_ds.cache().shuffle(1000).prefetch(tf.data.AUTOTUNE)
         val_ds = self.val_ds.cache().prefetch(tf.data.AUTOTUNE)
 
-        lr_scheduler = tf.keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate=0.001,
+        lr_scheduler0 = tf.keras.optimizers.schedules.CosineDecay(
+            initial_learning_rate=0.01,
+            decay_steps=self.n_epochs,
+            alpha=0.0
+        )
+        lr_scheduler1 = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=0.01,
             decay_steps= self.n_epochs,
             decay_rate=0.96,
             staircase=False
         )
         self.model.compile(
-            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_scheduler),
+            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_scheduler0),
             loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy']
         )
