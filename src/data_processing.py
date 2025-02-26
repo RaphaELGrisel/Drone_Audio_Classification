@@ -333,7 +333,9 @@ class DataProcessing():
         print(train_dataset.element_spec)
 
         # 🎯 On veut maintenant un dataset de test. Prenons 10% des données de train
-        test_size = int(0.30 * sum(1 for _ in train_dataset))  # 75% du validation set
+        #test_size = int(0.30 * sum(1 for _ in train_dataset))  # 75% du validation set
+
+        test_size = int(0.30 * tf.data.experimental.cardinality(train_dataset).numpy())  
 
         # On crée un dataset de test avec `take()` et on réduit train avec `skip()`
         test_dataset = train_dataset.take(test_size)
