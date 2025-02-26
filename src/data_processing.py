@@ -10,6 +10,7 @@ import tensorflow as tf
 
 from IPython import display
 from scipy.io import wavfile
+import scipy.signal
 import random
 
 import librosa
@@ -372,6 +373,102 @@ class DataProcessing():
         test_size = int(0.30 * tf.data.experimental.cardinality(train_dataset).numpy())  
 
         # On crée un dataset de test avec `take()` et on réduit train avec `skip()`
+        test_dataset = train_dataset.take(test_size)
+        train_dataset = train_dataset.skip(test_size)
+
+        train_dataset = train_dataset.cache().shuffle(2000).prefetch(tf.data.AUTOTUNE)
+        val_dataset = val_dataset.cache().prefetch(tf.data.AUTOTUNE)
+        test_dataset = test_dataset.cache().prefetch(tf.data.AUTOTUNE)
+
+        return train_dataset, val_dataset, test_dataset
+    
+
+
+
+    @staticmethod
+    def get_wigner_ville_distribution(waveform):
+        """
+        Calcule la distribution de Wigner-Ville pour un waveform donné.
+        """
+        def _compute_wigner_ville(waveform_np):
+            analytic_signal = scipy.signal.hilbert(waveform_np)
+            tfr = scipy.signal.spectrogram(analytic_signal, fs=16000, window='hann', nperseg=256, noverlap=128, mode='complex')
+            f, t, Sxx = tfr
+            WV = np.abs(Sxx)**2
+            WV = np.log(WV + 1e-6)  # Pour éviter log(0)
+            WV -= WV.min()
+            WV /= WV.max()
+            return WV.astype(np.float32)
+
+        wv_distribution = tf.py_function(func=_compute_wigner_ville, inp=[waveform], Tout=tf.float32)
+        wv_distribution.set_shape((129, 124))  # Ajuster la forme selon vos besoins
+        return wv_distribution[..., tf.newaxis]
+    
+
+
+    def plot_Wigner_Ville(self,n,type="yes_drone"):
+        for class_name in os.listdir(self.dataset_dir):
+            if class_name==type:
+                class_path = os.path.join(self.dataset_dir,class_name)
+                ct = 0
+                plt.figure(figsize=(16,10))
+                for file_name in os.listdir(class_path):
+                    while ct <n:
+                        audio_path = os.path.join(class_path,file_name)
+                        sample_rate, audio = wavfile.read(audio_path)
+                        audio = audio.astype(np.float32)
+                        WV_spectro = DataProcessing.get_wigner_ville_distribution(audio).numpy()
+                        plt.imshow(WV_spectro)
+                        plt.colorbar(label="dB")
+                        plt.title("Wigner-Ville Spectrogramme")
+                        plt.xlabel("Temps")
+                        plt.ylabel("Frequence")
+                        plt.gca().invert_yaxis()
+                        plt.show()
+                        ct+=1
+                plt.show()
+    
+
+
+    def get_wigner_ville_dataset(self):
+        print("GO")
+        train_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.05,
+            subset="training",
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        val_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.05,
+            subset="validation",
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        print(train_dataset.element_spec)
+        label_names = np.array(train_dataset.class_names)
+        print("Label names:", label_names)
+
+        # Appliquer `squeeze()` pour enlever les dimensions inutiles
+        train_dataset = train_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
+        val_dataset = val_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
+
+        # Transformer en distribution de Wigner-Ville
+        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.get_wigner_ville_distribution(audio), label),
+                                          num_parallel_calls=tf.data.AUTOTUNE)
+
+        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_wigner_ville_distribution(audio), label),
+                                      num_parallel_calls=tf.data.AUTOTUNE)
+
+        print(train_dataset.element_spec)
+
+        # Créer un dataset de test
+        test_size = int(0.30 * tf.data.experimental.cardinality(train_dataset).numpy())
         test_dataset = train_dataset.take(test_size)
         train_dataset = train_dataset.skip(test_size)
 
