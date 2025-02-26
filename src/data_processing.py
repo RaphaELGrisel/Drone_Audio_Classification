@@ -142,7 +142,7 @@ class DataProcessing():
         )
         spectrogram = tf.abs(spectrogram)
         mel_spectro = tfio.audio.melscale(spectrogram, rate=16000, mels=129,fmin=0, fmax=8000)
-        mel_spectro = tf.math.log(mel_spectro)
+        mel_spectro = tf.math.log(mel_spectro+1e-6)
         #mel_spectro = (mel_spectro - tf.reduce_min(mel_spectro)) / (tf.reduce_max(mel_spectro) - tf.reduce_min(mel_spectro))
         mel_spectro = mel_spectro[...,tf.newaxis]
         return mel_spectro
@@ -162,11 +162,17 @@ class DataProcessing():
                         audio_path = os.path.join(class_path,file_name)
                         sample_rate, audio = wavfile.read(audio_path)
                         audio = audio.astype(np.float32)
-                        mel_spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate,n_mels=129,hop_length=int((len(audio)/124)+1),n_fft=1024)
-                        print(np.shape(mel_spec))
-                        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-                        print(np.shape(mel_spec_db))
-                        librosa.display.specshow(mel_spec_db, sr=sample_rate,x_axis="time",y_axis='mel',cmap='viridis')
+                        spectrogram = tf.signal.stft(
+                            audio, frame_length=256, frame_step=128
+                        )
+                        spectrogram = tf.abs(spectrogram)
+                        mel_spectro = tfio.audio.melscale(spectrogram, rate=16000, mels=129,fmin=0, fmax=8000)
+                        mel_spectro = tf.math.log(mel_spectro+1e-6)
+                        #mel_spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate,n_mels=129,hop_length=int((len(audio)/124)+1),n_fft=1024)
+                        print(np.shape(mel_spectro))
+                        #mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+                        print(np.shape(mel_spectro))
+                        librosa.display.specshow(mel_spectro ,sr=sample_rate,x_axis="time",y_axis='mel',cmap='viridis')
                         plt.colorbar(label="dB")
                         plt.title("Mel-Spectrogramme Log")
                         plt.xlabel("Temps")
