@@ -159,12 +159,24 @@ class DataProcessing():
             """
             Fonction interne exécutée en mode eager pour convertir en spectrogram
             """
-            mel_spec = librosa.feature.melspectrogram(y=waveform_np, sr=16000,n_mels=129,hop_length=int((len(waveform)/124)+1),n_fft =1024)
+            mel_spec = librosa.feature.melspectrogram(y=waveform_np, sr=16000,n_mels=129,hop_length = tf.shape(waveform)[0] // 124 + 1,n_fft =1024)
             mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            mel_spec -= mel_spec.min()
+            mel_spec /= mel_spec.max()
             return mel_spec_db.astype(np.float32)
         
         mel_spectrogram=tf.py_function(func=_compute_mel_spectrogram,inp=[waveform], Tout=tf.float32)
         mel_spectrogram.set_shape((129,124))
+        return mel_spectrogram[...,tf.newaxis]
+    
+
+    @staticmethod
+    def get_mel_spectrogram_tensorflow(waveform):
+        spectrogram = tf.signal.stft(waveform, frame_length=1024, frame_step=256)
+        magnitude_spectrogram = tf.abs(spectrogram)
+        mel_filterbank = tf.signal.linear_to_mel_weight_matrix(num_mel_bins=129, num_spectrogram_bins=513, sample_rate=16000)
+        mel_spectrogram = tf.tensordot(magnitude_spectrogram, mel_filterbank, axes=1)
+        mel_spectrogram = tf.math.log(mel_spectrogram + 1e-6)  # Pour éviter log(0)
         return mel_spectrogram[...,tf.newaxis]
 
 
@@ -183,6 +195,8 @@ class DataProcessing():
                         sample_rate, audio = wavfile.read(audio_path)
                         audio = audio.astype(np.float32)
                         mel_spec = librosa.feature.melspectrogram(y=audio, sr=sample_rate,n_mels=129,hop_length=int((len(audio)/124)+1),n_fft=1024)
+                        mel_spec -= mel_spec.min()
+                        mel_spec /= mel_spec.max()
                         print(np.shape(mel_spec))
                         #print(type(mel_spec))
                         #print(type(mel_spec_db))
@@ -196,6 +210,26 @@ class DataProcessing():
                         ct+=1
                 plt.show()
     
+    def plot_mel_spectrogram_tensorflow(self,n,type="yes_drone"):
+        for class_name in os.listdir(self.dataset_dir):
+            if class_name==type:
+                class_path = os.path.join(self.dataset_dir,class_name)
+                ct = 0
+                plt.figure(figsize=(16,10))
+                for file_name in os.listdir(class_path):
+                    while ct <n:
+                        audio_path = os.path.join(class_path,file_name)
+                        sample_rate, audio = wavfile.read(audio_path)
+                        audio = audio.astype(np.float32)
+                        mel_spec = DataProcessing.get_mel_spectrogram_tensorflow(audio)
+                        plt.imshow(mel_spec)
+                        plt.colorbar(label="dB")
+                        plt.title("Mel-Spectrogramme Log")
+                        plt.xlabel("Temps")
+                        plt.ylabel("Echelle MEL")
+                        plt.show()
+                        ct+=1
+                plt.show()
 
 
     """
@@ -324,10 +358,10 @@ class DataProcessing():
         val_dataset = val_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
 
         # ⚡️ Transformer en spectrogramme
-        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram(audio), label),
+        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram_tensorflow(audio), label),
                                           num_parallel_calls=tf.data.AUTOTUNE)
 
-        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram(audio), label),
+        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_mel_spectrogram_tensorflow(audio), label),
                                       num_parallel_calls=tf.data.AUTOTUNE)
 
         print(train_dataset.element_spec)
@@ -340,5 +374,9 @@ class DataProcessing():
         # On crée un dataset de test avec `take()` et on réduit train avec `skip()`
         test_dataset = train_dataset.take(test_size)
         train_dataset = train_dataset.skip(test_size)
+
+        train_dataset = train_dataset.cache().shuffle(2000).prefetch(tf.data.AUTOTUNE)
+        val_dataset = val_dataset.cache().prefetch(tf.data.AUTOTUNE)
+        test_dataset = test_dataset.cache().prefetch(tf.data.AUTOTUNE)
 
         return train_dataset, val_dataset, test_dataset

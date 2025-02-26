@@ -11,6 +11,11 @@ class Model():
         self.train_spectrogram = training_dataset
 
     def CNN(self,n_labels = 2 ,input_dim=(124,129,1)):
+
+        """
+        When using Mel spectrogram, comment normalisation layer
+        
+        """
         input_shape = input_dim
         norm_layer = layers.Normalization()
         spectrogram_ds = self.train_spectrogram.map(lambda spec, label: spec)
