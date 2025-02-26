@@ -135,6 +135,10 @@ class DataProcessing():
         spectrogram = spectrogram[..., tf.newaxis]
         return spectrogram
     
+
+    """
+     Using tensorflow_io
+
     @staticmethod
     def get_mel_spectrogram(waveform):
         spectrogram = tf.signal.stft(
@@ -147,6 +151,22 @@ class DataProcessing():
         mel_spectro = mel_spectro[...,tf.newaxis]
         return mel_spectro
     
+    """
+
+    @staticmethod
+    def get_mel_spectrogram(waveform):
+        def _compute_mel_spectrogram(waveform_np):
+            """
+            Fonction interne exécutée en mode eager pour convertir en spectrogram
+            """
+            mel_spec = librosa.feature.melspectrogram(y=waveform_np, sr=16000,n_mels=129,hop_length=int((len(waveform)/124)+1),n_fft =1024)
+            mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            return mel_spec_db.astype(np.float32)
+        
+        mel_spectrogram=tf.py_function(func=_compute_mel_spectrogram,inp=[waveform], Tout=tf.float32)
+        mel_spectrogram.set_shape((129,124))
+        return mel_spectrogram[...,tf.newaxis]
+
 
     def plot_mel_spectrogram(self,n,type="yes_drone"):
         """
