@@ -645,3 +645,75 @@ class DataProcessing():
 
         return train_dataset, val_dataset, test_dataset
         
+    @staticmethod
+    def bin_frequency(drone):
+
+        membo_fft = tf.signal.fft(tf.cast(drone, tf.complex64))  # FFT en TensorFlow
+        membo_fft = tf.concat([[membo_fft[0]], 2 * membo_fft[1:]], axis=0)  
+        P_membo_fft = tf.abs(membo_fft)  # Puissance spectrale
+
+        f_fft_membo = tf.signal.fftfreq(16000, d=1/16000)  # Fréquences de la FFT
+
+        fb = tf.range(0, 8000, 10, dtype=tf.float32)  # Bins de fréquence
+
+        # 📌 4. Regroupement par bins
+        bin_indices = tf.searchsorted(fb, f_fft_membo, side='right') - 1 
+        bin_indices = tf.clip_by_value(bin_indices, 0, len(fb) - 1) 
+        Mean_energy_bin = tf.math.unsorted_segment_sum(P_membo_fft, bin_indices, num_segments=len(fb))
+        number_el_bin = tf.math.unsorted_segment_sum(tf.ones_like(P_membo_fft), bin_indices, num_segments=len(fb))
+        number_el_bin = tf.where(number_el_bin == 0, tf.ones_like(number_el_bin), number_el_bin)
+        Mean_energy_bin = Mean_energy_bin / number_el_bin
+        return Mean_energy_bin
+    
+    
+    def get_bin_frequency_dataset(self):
+        print("GO")
+        train_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.05,  # 20% des données iront en validation
+            subset="training",  # Partie training
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        val_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.05,  # 20% des données iront en validation
+            subset="validation",  # Partie validation
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        print(train_dataset.element_spec)
+        label_names = np.array(train_dataset.class_names)
+        print("Label names:", label_names)
+
+        # récupérer les données de bin de fréquence
+        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.bin_frequency(audio), label),
+                                          num_parallel_calls=tf.data.AUTOTUNE)
+
+        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.bin_frequency(audio), label),
+                                      num_parallel_calls=tf.data.AUTOTUNE)
+
+        print(train_dataset.element_spec)
+
+        # 🎯 On veut maintenant un dataset de test. Prenons 10% des données de train
+        #test_size = int(0.30 * sum(1 for _ in train_dataset))  # 75% du validation set
+
+        test_size = int(0.30 * tf.data.experimental.cardinality(train_dataset).numpy())  
+
+        # On crée un dataset de test avec `take()` et on réduit train avec `skip()`
+        test_dataset = train_dataset.take(test_size)
+        train_dataset = train_dataset.skip(test_size)
+
+        train_dataset = train_dataset.cache().shuffle(2000).prefetch(tf.data.AUTOTUNE)
+        val_dataset = val_dataset.cache().prefetch(tf.data.AUTOTUNE)
+        test_dataset = test_dataset.cache().prefetch(tf.data.AUTOTUNE)
+
+        return train_dataset, val_dataset, test_dataset
+        
+    
+    
+    
