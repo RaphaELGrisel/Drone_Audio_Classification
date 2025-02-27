@@ -652,15 +652,17 @@ class DataProcessing():
         membo_fft = tf.concat([[membo_fft[0]], 2 * membo_fft[1:]], axis=0)  
         P_membo_fft = tf.abs(membo_fft)  # Puissance spectrale
 
-        f_fft_membo = tf.signal.fftfreq(16000, d=1/16000)  # Fréquences de la FFT
+        f_fft_membo = np.fft.fftfreq(16000, d=1/16000)  # Fréquences de la FFT
+        f_fft_membo = tf.convert_to_tensor(f_fft_membo, dtype=tf.float32)
 
         fb = tf.range(0, 8000, 10, dtype=tf.float32)  # Bins de fréquence
+        num_bins = tf.shape(fb)[0]
 
         # 📌 4. Regroupement par bins
         bin_indices = tf.searchsorted(fb, f_fft_membo, side='right') - 1 
-        bin_indices = tf.clip_by_value(bin_indices, 0, len(fb) - 1) 
-        Mean_energy_bin = tf.math.unsorted_segment_sum(P_membo_fft, bin_indices, num_segments=len(fb))
-        number_el_bin = tf.math.unsorted_segment_sum(tf.ones_like(P_membo_fft), bin_indices, num_segments=len(fb))
+        bin_indices = tf.clip_by_value(bin_indices, 0, num_bins - 1) 
+        Mean_energy_bin = tf.math.unsorted_segment_sum(P_membo_fft, bin_indices, num_segments=num_bins)
+        number_el_bin = tf.math.unsorted_segment_sum(tf.ones_like(P_membo_fft), bin_indices, num_segments=num_bins)
         number_el_bin = tf.where(number_el_bin == 0, tf.ones_like(number_el_bin), number_el_bin)
         Mean_energy_bin = Mean_energy_bin / number_el_bin
         return Mean_energy_bin
