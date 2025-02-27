@@ -449,13 +449,16 @@ class DataProcessing():
         # calculate the wigner distribution
         N = x.shape[0]
         bins = np.arange(N)
+        print("BINS:",bins)
         indices = linalg.hankel(bins, bins + N - (N % 2))
-
+        print("INDICES:",indices)
         padded_x = np.pad(x, (N, N), 'constant')
+        print("PADDED_X:",padded_x)
         wigner_integrand = \
             padded_x[indices+N] * np.conjugate(padded_x[indices[::, ::-1]])
 
         wigner_distribution = np.real(np.fft.fft(wigner_integrand, axis=1)).T
+        print("WIGNER_DISTRIBUTION:",wigner_distribution)
 
         # calculate sample frequency
         if sample_frequency is None:
@@ -486,7 +489,7 @@ class DataProcessing():
                         audio_path = os.path.join(class_path,file_name)
                         sample_rate, audio = wavfile.read(audio_path)
                         #audio = audio.astype(np.float32)
-                        WV_spectro = DataProcessing.wigner_distribution(audio)
+                        WV_spectro = DataProcessing.wigner_distribution(audio)[0]
                         plt.imshow(WV_spectro)
                         plt.colorbar(label="dB")
                         plt.title("Wigner-Ville Spectrogramme")
@@ -546,3 +549,45 @@ class DataProcessing():
         test_dataset = test_dataset.cache().prefetch(tf.data.AUTOTUNE)
 
         return train_dataset, val_dataset, test_dataset
+    
+    
+    
+    @staticmethod
+    def get_mfcc(waveform):
+        stfts = tf.signal.stft(waveform, frame_length=256, frame_step=128,fft_length=1024)
+        spectrograms = tf.abs(stfts)
+        
+        # Conversion en échelle Mel
+        num_spectrogram_bins = spectrograms.shape[-1]
+        lower_edge_hertz, upper_edge_hertz = 0, 10000
+        linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
+            num_mel_bins = 80, num_spectrogram_bins=spectrograms.shape[-1], sample_rate=16000, lower_edge_hertz, upper_edge_hertz)
+        mel_spectrograms = tf.tensordot(spectrograms, linear_to_mel_weight_matrix, 1)
+        
+        # Log-magnitude Mel spectrogram
+        log_mel_spectrograms = tf.math.log(mel_spectrograms + 1e-6)
+        
+        # Extraction des MFCCs
+        mfccs = tf.signal.mfccs_from_log_mel_spectrograms(log_mel_spectrograms)
+        return mfccs[..., tf.newaxis]
+    
+    def plot_mfcc(self,n,type="yes_drone"):
+        for class_name in os.listdir(self.dataset_dir):
+            if class_name==type:
+                class_path = os.path.join(self.dataset_dir,class_name)
+                ct = 0
+                plt.figure(figsize=(16,10))
+                for file_name in os.listdir(class_path):
+                    while ct <n:
+                        audio_path = os.path.join(class_path,file_name)
+                        sample_rate, audio = wavfile.read(audio_path)
+                        audio = audio.astype(np.float32)
+                        mfcc = DataProcessing.get_mfcc(audio)
+                        plt.imshow(mfcc)
+                        plt.colorbar(label="dB")
+                        plt.title("MFCC")
+                        plt.xlabel("Temps")
+                        plt.ylabel("MFCC")
+                        plt.show()
+                        ct+=1
+                plt.show()
