@@ -561,7 +561,7 @@ class DataProcessing():
         num_spectrogram_bins = spectrograms.shape[-1]
         lower_edge_hertz, upper_edge_hertz = 0, 10000
         linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
-            num_mel_bins = 80, num_spectrogram_bins=spectrograms.shape[-1], sample_rate=16000, lower_edge_hertz, upper_edge_hertz)
+            num_mel_bins = 80, num_spectrogram_bins=spectrograms.shape[-1], sample_rate=16000, lower_edge_hertz = 0 , upper_edge_hertz= 1000)
         mel_spectrograms = tf.tensordot(spectrograms, linear_to_mel_weight_matrix, 1)
         
         # Log-magnitude Mel spectrogram
@@ -591,3 +591,57 @@ class DataProcessing():
                         plt.show()
                         ct+=1
                 plt.show()
+                
+                
+    def get_mfcc_dataset(self):
+        print("GO")
+        train_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.05,  # 20% des données iront en validation
+            subset="training",  # Partie training
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        val_dataset = tf.keras.utils.audio_dataset_from_directory(
+            directory=self.dataset_dir,
+            batch_size=64,
+            validation_split=0.05,  # 20% des données iront en validation
+            subset="validation",  # Partie validation
+            seed=42,
+            output_sequence_length=16000
+        )
+
+        print(train_dataset.element_spec)
+        label_names = np.array(train_dataset.class_names)
+        print("Label names:", label_names)
+
+        # ⚡️ Appliquer `squeeze()` pour enlever les dimensions inutiles
+        train_dataset = train_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
+        val_dataset = val_dataset.map(DataProcessing.squeeze, num_parallel_calls=tf.data.AUTOTUNE)
+
+        # ⚡️ Transformer en spectrogramme
+        train_dataset = train_dataset.map(lambda audio, label: (DataProcessing.get_mfcc(audio), label),
+                                          num_parallel_calls=tf.data.AUTOTUNE)
+
+        val_dataset = val_dataset.map(lambda audio, label: (DataProcessing.get_mfcc(audio), label),
+                                      num_parallel_calls=tf.data.AUTOTUNE)
+
+        print(train_dataset.element_spec)
+
+        # 🎯 On veut maintenant un dataset de test. Prenons 10% des données de train
+        #test_size = int(0.30 * sum(1 for _ in train_dataset))  # 75% du validation set
+
+        test_size = int(0.30 * tf.data.experimental.cardinality(train_dataset).numpy())  
+
+        # On crée un dataset de test avec `take()` et on réduit train avec `skip()`
+        test_dataset = train_dataset.take(test_size)
+        train_dataset = train_dataset.skip(test_size)
+
+        train_dataset = train_dataset.cache().shuffle(2000).prefetch(tf.data.AUTOTUNE)
+        val_dataset = val_dataset.cache().prefetch(tf.data.AUTOTUNE)
+        test_dataset = test_dataset.cache().prefetch(tf.data.AUTOTUNE)
+
+        return train_dataset, val_dataset, test_dataset
+        
