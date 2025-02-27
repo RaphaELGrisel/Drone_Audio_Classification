@@ -17,13 +17,13 @@ class Model():
         
         """
         input_shape = input_dim
-        norm_layer = layers.Normalization()
-        spectrogram_ds = self.train_spectrogram.map(lambda spec, label: spec)
-        norm_layer.adapt(spectrogram_ds)
+        #norm_layer = layers.Normalization()
+        #spectrogram_ds = self.train_spectrogram.map(lambda spec, label: spec)
+        #norm_layer.adapt(spectrogram_ds)
         model = models.Sequential([
             layers.Input(shape=input_shape),
             layers.Resizing(32,32),
-            norm_layer,
+            #norm_layer,
             layers.Conv2D(32,3,activation="relu"),
             layers.Conv2D(64,3,activation="relu"),
             layers.MaxPooling2D(),
