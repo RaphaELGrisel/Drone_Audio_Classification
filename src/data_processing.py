@@ -665,6 +665,8 @@ class DataProcessing():
         number_el_bin = tf.math.unsorted_segment_sum(tf.ones_like(P_membo_fft), bin_indices, num_segments=num_bins)
         number_el_bin = tf.where(number_el_bin == 0, tf.ones_like(number_el_bin), number_el_bin)
         Mean_energy_bin = Mean_energy_bin / number_el_bin
+        
+        Mean_energy_bin = tf.nn.l2_normalize(Mean_energy_bin, axis=-1)
         return Mean_energy_bin
     
     
