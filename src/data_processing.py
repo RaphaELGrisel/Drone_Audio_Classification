@@ -10,7 +10,7 @@ import tensorflow as tf
 
 from IPython import display
 from scipy.io import wavfile
-import scipy.signal
+from scipy import signal , linalg
 import random
 
 import librosa
@@ -391,8 +391,8 @@ class DataProcessing():
         Calcule la distribution de Wigner-Ville pour un waveform donné.
         """
         def _compute_wigner_ville(waveform_np):
-            analytic_signal = scipy.signal.hilbert(waveform_np)
-            tfr = scipy.signal.spectrogram(analytic_signal, fs=16000, window='hann', nperseg=256, noverlap=128, mode='complex')
+            analytic_signal = signal.hilbert(waveform_np)
+            tfr = signal.spectrogram(analytic_signal, fs=16000, window='hann', nperseg=256, noverlap=128, mode='complex')
             f, t, Sxx = tfr
             WV = np.abs(Sxx)**2
             WV = np.log(WV + 1e-6)  # Pour éviter log(0)
@@ -406,6 +406,75 @@ class DataProcessing():
     
 
 
+    @staticmethod
+    def wigner_distribution(x, use_analytic=True, sample_frequency=None,
+                            t_0=0, t_1=1, flip_frequency_range=True):
+        """Discrete Pseudo Wigner Ville Distribution based on [1]
+
+        Args:
+            x, array like, signal input array of length N
+            use_analytic, bool, whether or not to use analytic associate of input
+                data x by default set to True
+            sample_frequency, sampling frequency
+            t_0, time at which the first sample was recorded
+            t_1, time at which the last sample was recorded
+            flip_frequency_range, flip the data in about the time axis such that
+                the minimum frequency is in the left bottom corner.
+
+        Returns:
+            wigner_distribution, N x N matrix
+            max_frequency, a positive number, maximum of the frequency range
+
+        References:
+            [1] T. Claasen & W. Mecklenbraeuker, The Wigner Distribution -- A Tool
+            For Time-Frequency Signal Analysis, Phillips J. Res. 35, 276-300, 1980
+        """
+
+        # Ensure the input array is a numpy array
+        if not isinstance(x, np.ndarray):
+            x = np.asarray(x)
+        # Compute the autocorrelation function matrix
+        if x.ndim != 1:
+            raise ValueError("Input data should be one dimensional time series.")
+        # Use analytic associate if set to True
+        if use_analytic:
+            if all(np.isreal(x)):
+                x = signal.hilbert(x)
+            else:
+                raise RuntimeError("Keyword 'use_analytic' set to True but signal"
+                                " is of complex data type. The analytic signal"
+                                " can only be computed if the input signal is"
+                                " real valued.")
+
+        # calculate the wigner distribution
+        N = x.shape[0]
+        bins = np.arange(N)
+        indices = linalg.hankel(bins, bins + N - (N % 2))
+
+        padded_x = np.pad(x, (N, N), 'constant')
+        wigner_integrand = \
+            padded_x[indices+N] * np.conjugate(padded_x[indices[::, ::-1]])
+
+        wigner_distribution = np.real(np.fft.fft(wigner_integrand, axis=1)).T
+
+        # calculate sample frequency
+        if sample_frequency is None:
+            sample_frequency = N / (t_1 - t_0)
+
+        # calculate frequency range
+        if use_analytic:
+            max_frequency = sample_frequency/2
+        else:
+            max_frequency = sample_frequency/4
+
+        # flip the frequency range
+        if flip_frequency_range:
+            wigner_distribution = wigner_distribution[::-1, ::]
+
+        return wigner_distribution, max_frequency
+    
+
+
     def plot_Wigner_Ville(self,n,type="yes_drone"):
         for class_name in os.listdir(self.dataset_dir):
             if class_name==type:
@@ -416,8 +485,8 @@ class DataProcessing():
                     while ct <n:
                         audio_path = os.path.join(class_path,file_name)
                         sample_rate, audio = wavfile.read(audio_path)
-                        audio = audio.astype(np.float32)
-                        WV_spectro = DataProcessing.get_wigner_ville_distribution(audio).numpy()
+                        #audio = audio.astype(np.float32)
+                        WV_spectro = DataProcessing.wigner_distribution(audio)
                         plt.imshow(WV_spectro)
                         plt.colorbar(label="dB")
                         plt.title("Wigner-Ville Spectrogramme")
