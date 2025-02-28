@@ -645,6 +645,10 @@ class DataProcessing():
 
         return train_dataset, val_dataset, test_dataset
         
+        
+        
+    #Modifier pour travailler avec des tableaux numpy et ensuite les convertir en tenseurs
+     
     @staticmethod
     def bin_frequency(drone):
 
@@ -718,6 +722,3 @@ class DataProcessing():
 
         return train_dataset, val_dataset, test_dataset
         
-    
-    
-    
