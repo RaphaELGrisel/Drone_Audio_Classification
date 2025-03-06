@@ -1,4 +1,4 @@
 venv/
-data/
-saved_model/
 data_full/
+src/main.py
+src/test.py
