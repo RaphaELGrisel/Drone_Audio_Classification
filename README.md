@@ -1,5 +1,6 @@
 # **Audio Drone Classification**  
 
+*I conducted this project during my final year at ENSTA Bretagne as a engineering student*
 *This project explores methods that combine time-frequency representations and deep learning for audio-based drone classification.*
 
 ## 🚀 **Introduction**  
