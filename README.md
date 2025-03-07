@@ -20,7 +20,7 @@ The work conducted in this project is further detailed in the associated paper.
 ## 🛠 **Setup**  
 1. **Clone the repository**  
    ```bash
-   git clone https://github.com/utilisateur/nom-du-projet.git
+   git clone [https://github.com/RaphaELGrisel/Drone_Audio_Classification].git
    cd nom-du-projet
    ```  
 2. **Install dependencies**  
